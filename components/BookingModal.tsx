@@ -1,5 +1,5 @@
 'use client';
-
+import axios from 'axios';
 import { useState } from 'react';
 import Image from 'next/image';
 import { FaTimes } from 'react-icons/fa';
@@ -18,6 +18,13 @@ type BookingModalProps = {
 };
 
 const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami'];
+const cityLocations: { [key: string]: string[] } = {
+  'New York': ['Times Square', 'Central Park', 'Brooklyn Bridge', 'Empire State Building'],
+  'Los Angeles': ['LAX Airport', 'Santa Monica Pier', 'Hollywood Blvd', 'Griffith Observatory'],
+  'Chicago': ['Millennium Park', 'The Art Institute', 'Navy Pier', 'O\'Hare Airport'],
+  'Houston': ['Downtown Houston', 'Space Center', 'Galleria Mall', 'Museum District'],
+  'Miami': ['South Beach', 'Wynwood Walls', 'Downtown Miami', 'Miami International Airport'],
+};
 
 const BookingModal = ({ car, onClose }: BookingModalProps) => {
   const [formData, setFormData] = useState({
@@ -34,11 +41,28 @@ const BookingModal = ({ car, onClose }: BookingModalProps) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Booking Confirmed!');
-    onClose();
-  };
+// 🔴 🔴 THIS IS THE PLACE TO UPDATE handleSubmit 🔴 🔴
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    const payload = {
+      ...formData,
+      carId: car.id, // <-- Include the car ID for backend
+    };
+
+    const response = await axios.post('http://localhost:4000/api/bookings', payload);
+
+    if (response.status === 201) {
+      alert('Booking Confirmed & Saved!');
+      onClose();
+    }
+  } catch (error) {
+    console.error('Booking failed', error);
+    alert('Something went wrong while booking.');
+  }
+};
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
@@ -64,36 +88,45 @@ const BookingModal = ({ car, onClose }: BookingModalProps) => {
         {/* Right Side - Booking Form */}
         <div className="w-1/2">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col space-y-1">
-              <label className="font-semibold text-gray-800">City</label>
-              <select
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                className="select select-bordered border-2 border-gray-400 focus:border-blue-600 font-semibold placeholder-gray-600 text-black"
-                required
-              >
-                <option value="">Select City</option>
-                {cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* City Selection */}
+<div className="flex flex-col space-y-1">
+  <label className="font-semibold text-gray-800">City</label>
+  <select
+    name="city"
+    value={formData.city}
+    onChange={handleChange}
+    className="select select-bordered border-2 border-gray-400 focus:border-blue-600 font-semibold placeholder-gray-600 text-black"
+    required
+  >
+    <option value="">Select City</option>
+    {cities.map((city) => (
+      <option key={city} value={city}>
+        {city}
+      </option>
+    ))}
+  </select>
+</div>
 
-            <div className="flex flex-col space-y-1">
-              <label className="font-semibold text-gray-800">Pickup Location</label>
-              <input
-                type="text"
-                name="pickupLocation"
-                value={formData.pickupLocation}
-                onChange={handleChange}
-                placeholder="Enter pickup location"
-                className="input input-bordered border-2 border-gray-400 focus:border-blue-600 font-semibold placeholder-gray-600 text-black"
-                required
-              />
-            </div>
+{/* Pickup Location */}
+<div className="flex flex-col space-y-1">
+  <label className="font-semibold text-gray-800">Pickup Location</label>
+  <select
+    name="pickupLocation"
+    value={formData.pickupLocation}
+    onChange={handleChange}
+    disabled={!formData.city}
+    className="select select-bordered border-2 border-gray-400 focus:border-blue-600 font-semibold placeholder-gray-600 text-black"
+    required
+  >
+    <option value="">Select Pickup Location</option>
+    {formData.city &&
+      cityLocations[formData.city]?.map((location) => (
+        <option key={location} value={location}>
+          {location}
+        </option>
+      ))}
+  </select>
+</div>
 
             <div className="flex gap-4">
               <div className="flex flex-col space-y-1 w-1/2">
