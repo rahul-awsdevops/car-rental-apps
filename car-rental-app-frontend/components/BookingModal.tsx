@@ -15,6 +15,7 @@ type BookingModalProps = {
     mileage: string;
   };
   onClose: () => void;
+  onConfirm: () => void; 
 };
 
 const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami'];
@@ -26,7 +27,8 @@ const cityLocations: { [key: string]: string[] } = {
   'Miami': ['South Beach', 'Wynwood Walls', 'Downtown Miami', 'Miami International Airport'],
 };
 
-const BookingModal = ({ car, onClose }: BookingModalProps) => {
+const BookingModal = ({ car, onClose, onConfirm }: BookingModalProps) => {
+
   const [formData, setFormData] = useState({
     pickupLocation: '',
     city: '',
@@ -54,10 +56,12 @@ const handleSubmit = async (e: React.FormEvent) => {
       // ✅ API call now goes via NGINX reverse proxy
       const response = await axios.post('/api/bookings', payload);
 
-    if (response.status === 201) {
-      alert('Booking Confirmed & Saved!');
-      onClose();
-    }
+      if (response.status === 201) {
+        alert('Booking Confirmed & Saved!');
+        onConfirm();  // <-- Call the onConfirm handler passed from CarCard
+        onClose();
+      }
+      
   } catch (error) {
     console.error('Booking failed', error);
     alert('Something went wrong while booking.');
