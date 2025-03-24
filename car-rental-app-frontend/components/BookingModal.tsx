@@ -51,7 +51,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       carId: car.id, // <-- Include the car ID for backend
     };
 
-    const response = await axios.post('http://localhost:4000/api/bookings', payload);
+      // ✅ API call now goes via NGINX reverse proxy
+      const response = await axios.post('/api/bookings', payload);
 
     if (response.status === 201) {
       alert('Booking Confirmed & Saved!');

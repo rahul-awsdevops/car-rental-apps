@@ -1,0 +1,21 @@
+server {
+    listen ${NGINX_PORT};
+
+    # Serve Next.js static build or React app
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri /index.html;
+    }
+
+    # Proxy API requests to Node.js backend dynamically
+    location /api/ {
+        proxy_pass http://${API_BACKEND_URL}:${API_BACKEND_PORT}/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+}
