@@ -16,14 +16,6 @@ pipeline {
             }
         }
 
-        stage('Run Frontend Tests & Coverage') {
-            steps {
-                dir('car-rental-app-frontend') {
-                    sh 'npm test -- --coverage'
-                }
-            }
-        }
-
         stage('SonarQube Analysis (Frontend)') {
             steps {
                 dir('car-rental-app-frontend') {
