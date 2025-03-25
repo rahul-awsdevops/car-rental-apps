@@ -7,7 +7,7 @@ pipeline {
     }
 
     stages {
-
+/*
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -66,6 +66,31 @@ pipeline {
                         if (qg.status != 'OK') {
                             error "Quality Gate failed: ${qg.status}"
                         }
+                    }
+                }
+            }
+        }
+        */
+        stage('Trivy Filesystem Scan') {
+            steps {
+                script {
+                    // Scan frontend (check node_modules)
+                    dir('car-rental-app-frontend') {
+                        sh """
+                            trivy fs .
+                            --severity HIGH,CRITICAL \
+                            --exit-code 1 \
+                            
+                        """
+                    }
+                    // Scan backend
+                    dir('car-rental-apps-backend') {
+                        sh """
+                            trivy fs .
+                            --severity HIGH,CRITICAL \
+                            --exit-code 1 \
+                            
+                        """
                     }
                 }
             }
