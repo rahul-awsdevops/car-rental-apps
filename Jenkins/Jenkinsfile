@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'ecs-fargate-agent' } 
 
     environment {
         SONAR_HOST_URL = "http://3.88.1.135:9000/"
