@@ -77,8 +77,9 @@ pipeline {
                     // Scan frontend (check node_modules)
                     dir('car-rental-app-frontend') {
                         sh """
-                            trivy fs .
-                            --severity HIGH,CRITICAL \
+                        trivy --version
+                        trivy fs . \
+                          --severity HIGH,CRITICAL \
                             --exit-code 1 \
                             
                         """
@@ -86,7 +87,7 @@ pipeline {
                     // Scan backend
                     dir('car-rental-apps-backend') {
                         sh """
-                            trivy fs .
+                            trivy fs . \
                             --severity HIGH,CRITICAL \
                             --exit-code 1 \
                             
