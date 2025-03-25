@@ -3,6 +3,8 @@ FROM nginx:stable-alpine
 # Copy Nginx template
 COPY nginx/templates /etc/nginx/templates/
 ENV NGINX_PORT=80
+ENV NEXTJS_APP_URL=localhost
+ENV NEXTJS_APP_PORT=3000
 ENV API_BACKEND_URL=localhost
 ENV API_BACKEND_PORT=4000
 

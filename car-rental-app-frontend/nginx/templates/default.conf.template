@@ -4,7 +4,7 @@ server {
     # Serve Next.js static build or React app
 
     location / {
-        proxy_pass http://nextjs-frontend:3000;
+        proxy_pass http://${NEXTJS_APP_URL}:${NEXTJS_APP_PORT};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }

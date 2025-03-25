@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+
+    environment {
+        SONAR_HOST_URL = "http://3.88.1.135:9000/"
+        SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
+    }
+
+    stages {
+
+        stage('Install Frontend Dependencies') {
+            steps {
+                dir('car-rental-app-frontend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Run Frontend Tests & Coverage') {
+            steps {
+                dir('car-rental-app-frontend') {
+                    sh 'npm test -- --coverage'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Frontend)') {
+            steps {
+                dir('car-rental-app-frontend') {
+                    script {
+                        def scannerHome = tool 'SonarQubeScanner'
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_TOKEN}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Install Backend Dependencies') {
+            steps {
+                dir('car-rental-apps-backend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Backend)') {
+            steps {
+                dir('car-rental-apps-backend') {
+                    script {
+                        def scannerHome = tool 'SonarQubeScanner'
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_TOKEN}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Quality Gate failed: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
