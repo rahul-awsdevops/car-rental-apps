@@ -4,6 +4,10 @@ pipeline {
     environment {
         SONAR_HOST_URL = "http://3.88.1.135:9000/"
         SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
+        AWS_ACCOUNT_ID = "676206914267"
+        AWS_REGION = "us-east-1"
+        FRONTEND_ECR_REPOSITORY = "techcloud-academy-frontend-apps"
+        BACKEND_ECR_REPOSITORY = "techcloud-academy-backend-apps"
     }
 
     stages {
@@ -93,6 +97,52 @@ pipeline {
                             
                         """
                     }
+                }
+            }
+        }
+        stage('Docker Build & Push to ECR') {
+            steps {
+                script {
+                    COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+                    env.IMAGE_TAG = COMMIT_ID  // Set IMAGE_TAG as an environment variable
+
+                    // Authenticate with AWS ECR
+                    sh """
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                    """
+
+                    // Build and push frontend image
+                    dir('car-rental-app-frontend') {
+                        sh """
+                            docker build -t $FRONTEND_ECR_REPOSITORY:$IMAGE_TAG .
+                            docker tag $FRONTEND_ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_ECR_REPOSITORY:$IMAGE_TAG
+                            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_ECR_REPOSITORY:$IMAGE_TAG
+                        """
+                    }
+
+                    // Build and push backend image
+                    dir('car-rental-apps-backend') {
+                        sh """
+                            docker build -t $BACKEND_ECR_REPOSITORY:$IMAGE_TAG .
+                            docker tag $BACKEND_ECR_REPOSITORY:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_ECR_REPOSITORY:$IMAGE_TAG
+                            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_ECR_REPOSITORY:$IMAGE_TAG
+                        """
+                    }
+                }
+            }
+        }
+        stage('Trivy Image Scan') {
+            steps {
+                script {
+                    // Scan frontend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 1 $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_ECR_REPOSITORY:$IMAGE_TAG
+                    """
+                    
+                    // Scan backend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 1 $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_ECR_REPOSITORY:$IMAGE_TAG
+                    """
                 }
             }
         }
