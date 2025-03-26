@@ -2,7 +2,7 @@ pipeline {
     agent { label 'ecs-fargate-agent' } 
 
     environment {
-        SONAR_HOST_URL = "http://3.88.1.135:9000/"
+        SONAR_HOST_URL = "http://34.228.7.180:9000/"
         SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
         AWS_ACCOUNT_ID = "676206914267"
         AWS_REGION = "us-east-1"
@@ -11,7 +11,7 @@ pipeline {
     }
 
     stages {
-/*
+
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -61,7 +61,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Quality Gate') {
             steps {
                 script {
