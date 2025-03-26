@@ -100,38 +100,44 @@ pipeline {
                 }
             }
         }
-        stage('Docker Build & Push to ECR') {
-            steps {
-                script {
-                // ✅ Declare COMMIT_ID with 'def' to avoid memory leak warning
-                    def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-                    env.IMAGE_TAG = COMMIT_ID  
+        stage('Docker Build & Push to ECR with Kaniko') {
+    steps {
+        script {
+            // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID  
 
-                    // Authenticate with AWS ECR
-                    sh """
-                        aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
-                    """
+            // Authenticate with AWS ECR (Required for Kaniko)
+            sh """
+                aws ecr get-login-password --region ${env.AWS_REGION} | \
+                docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+            """
 
-                    // Build and push frontend image
-                    dir('car-rental-app-frontend') {
-                        sh """
-                            docker build -t ${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} .
-                            docker tag ${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                            docker push ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
-                            """
-                    }
+            // ✅ Build & Push Frontend Image using Kaniko
+            dir('car-rental-app-frontend') {
+                sh """
+                    /kaniko/executor \
+                    --context `pwd` \
+                    --dockerfile `pwd`/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                    --cache=true
+                """
+            }
 
-                    // Build and push backend image
-                    dir('car-rental-apps-backend') {
-                        sh """
-                            docker build -t ${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} .
-                            docker tag ${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                            docker push ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                        """
-                    }
-                }
+            // ✅ Build & Push Backend Image using Kaniko
+            dir('car-rental-apps-backend') {
+                sh """
+                    /kaniko/executor \
+                    --context `pwd` \
+                    --dockerfile `pwd`/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                    --cache=true
+                """
             }
         }
+    }
+}
+
         stage('Trivy Image Scan') {
             steps {
                 script {
