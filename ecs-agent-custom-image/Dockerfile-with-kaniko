@@ -21,6 +21,7 @@ ENV DOCKER_CONFIG=/kaniko/.docker
 # Install dependencies in one layer
 RUN apt-get update && apt-get install -y  \
     git \
+    docker.io \
     unzip \
     curl \
     jq \
@@ -55,7 +56,9 @@ RUN curl -Lo sonarqube.zip https://binaries.sonarsource.com/Distribution/sonar-s
     && mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner \
     && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner \
     && rm sonarqube.zip
-
+    
+# Set Docker socket permissions
+RUN usermod -aG docker jenkins
 USER jenkins
 
 CMD ["/usr/local/bin/jenkins-agent"]
