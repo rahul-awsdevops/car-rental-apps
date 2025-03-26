@@ -109,9 +109,11 @@ pipeline {
             // ✅ Build & Push Frontend Image using Kaniko
             dir('car-rental-app-frontend') {
                 sh """
-                    /kaniko/executor \
-                    --context `pwd` \
-                    --dockerfile `pwd`/Dockerfile \
+                pwd
+                ls -lah
+                /kaniko/executor \
+                    --context /workspace/ \
+                    --dockerfile /workspace/Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
                     --cache=true
                 """
