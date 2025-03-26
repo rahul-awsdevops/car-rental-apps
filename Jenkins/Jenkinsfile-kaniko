@@ -106,13 +106,6 @@ pipeline {
             // ✅ Generate a 7-character commit hash as IMAGE_TAG
             def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
             env.IMAGE_TAG = COMMIT_ID  
-
-            // Authenticate with AWS ECR (Required for Kaniko)
-            sh """
-                aws ecr get-login-password --region ${env.AWS_REGION} | \
-                docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
-            """
-
             // ✅ Build & Push Frontend Image using Kaniko
             dir('car-rental-app-frontend') {
                 sh """
