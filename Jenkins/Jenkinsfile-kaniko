@@ -111,9 +111,13 @@ pipeline {
                 sh """
                 pwd
                 ls -lah
+                whoami
+                id
+                ls -ld /kaniko
+                ls -l /home/jenkins/workspace/eks-deployment/car-rental-app-frontend/Dockerfile
                 /kaniko/executor \
-                    --context . \
-                    --dockerfile Dockerfile \
+                    --context=`pwd`\
+                    --dockerfile `pwd`/Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
                     --cache=true
                 """
