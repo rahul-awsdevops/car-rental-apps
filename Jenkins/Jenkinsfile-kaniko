@@ -112,8 +112,8 @@ pipeline {
                 pwd
                 ls -lah
                 /kaniko/executor \
-                    --context /workspace/ \
-                    --dockerfile /workspace/Dockerfile \
+                    --context . \
+                    --dockerfile Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
                     --cache=true
                 """
@@ -123,8 +123,8 @@ pipeline {
             dir('car-rental-apps-backend') {
                 sh """
                     /kaniko/executor \
-                    --context `pwd` \
-                    --dockerfile `pwd`/Dockerfile \
+                    --context . \
+                    --dockerfile Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
                     --cache=true
                 """
