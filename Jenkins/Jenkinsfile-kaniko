@@ -114,8 +114,6 @@ pipeline {
                 whoami
                 id
                 ls -ld /kaniko
-                chown -R jenkins:jenkins /kaniko
-                ls -ld /kaniko
                 ls -l /home/jenkins/workspace/eks-deployment/car-rental-app-frontend/Dockerfile
                 /kaniko/executor \
                     --context=`pwd`\
