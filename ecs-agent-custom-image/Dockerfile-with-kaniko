@@ -9,9 +9,6 @@ FROM jenkins/inbound-agent:latest
 USER root
 # Copy Kaniko binary
 COPY --from=kaniko /kaniko /kaniko
-RUN chown -R jenkins:jenkins /kaniko
-# Set Kaniko execution permissions
-RUN chmod +x /kaniko/executor
 
 # Define environment variables for Kaniko
 ENV DOCKER_CONFIG=/kaniko/.docker
