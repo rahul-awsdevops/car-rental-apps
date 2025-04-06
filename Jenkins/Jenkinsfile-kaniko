@@ -1,5 +1,11 @@
 pipeline {
     agent { label 'ecs-fargate-agent' } 
+    options {
+    // Keep workspace for debugging
+    preserveStashes(buildCount: 3) 
+    // Timeout if stuck
+    timeout(time: 30, unit: 'MINUTES') 
+}
 
     environment {
         SONAR_HOST_URL = "http://34.228.7.180:9000/"
@@ -100,28 +106,7 @@ pipeline {
                 }
             }
         }
-               stage('Docker Build & Push frontend to ECR with Kaniko') {
-    steps {
-        script {
-            // ✅ Generate a 7-character commit hash as IMAGE_TAG
-            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-            env.IMAGE_TAG = COMMIT_ID  
-            // ✅ Build & Push Frontend Image using Kaniko
-                sh """
-                mkdir -p /root/.docker
-                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
-                cp /root/.docker/config.json /kaniko/.docker/config.json
-                 echo "🔧 Building Frontend Image..."
-                /kaniko/executor \
-                --context=${env.WORKSPACE}/car-rental-app-frontend \
-                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                    --verbosity=debug \
-                    --log-format=text 
-                """
-            }
-        }
-    }
+
         stage('Docker Build & Push Backend to ECR with Kaniko') {
     steps {
         script {
@@ -146,6 +131,28 @@ pipeline {
         }
     }
 
+     stage('Docker Build & Push frontend to ECR with Kaniko') {
+    steps {
+        script {
+            // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID  
+            // ✅ Build & Push Frontend Image using Kaniko
+                sh """
+                mkdir -p /root/.docker
+                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+                cp /root/.docker/config.json /kaniko/.docker/config.json
+                 echo "🔧 Building Frontend Image..."
+                /kaniko/executor \
+                --context=${env.WORKSPACE}/car-rental-app-frontend \
+                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                    --verbosity=debug \
+                    --log-format=text 
+                """
+            }
+        }
+    }
 
         stage('Trivy Image Scan') {
             steps {
