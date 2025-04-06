@@ -106,6 +106,11 @@ pipeline {
             // ✅ Generate a 7-character commit hash as IMAGE_TAG
             def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
             env.IMAGE_TAG = COMMIT_ID  
+                 sh """
+                 mkdir -p /kaniko/.docker
+                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+                cp ~/.docker/config.json /kaniko/.docker/config.json
+                """
             // ✅ Build & Push Frontend Image using Kaniko
             dir('car-rental-app-frontend') {
                 sh """
@@ -114,12 +119,10 @@ pipeline {
                 whoami
                 id
                 ls -ld /kaniko
-                ls -l /home/jenkins/workspace/eks-deployment/car-rental-app-frontend/Dockerfile
                 /kaniko/executor \
                     --context=`pwd`\
                     --dockerfile `pwd`/Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                    --cache=true
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
                 """
             }
 
@@ -127,6 +130,7 @@ pipeline {
             dir('car-rental-apps-backend') {
                 sh """
                     /kaniko/executor \
+                    --verbosity=debug \
                     --context . \
                     --dockerfile Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \

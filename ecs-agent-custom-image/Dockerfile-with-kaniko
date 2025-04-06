@@ -9,9 +9,9 @@ FROM jenkins/inbound-agent:latest
 USER root
 # Copy Kaniko binary
 COPY --from=kaniko /kaniko /kaniko
-# Change ownership during build (before running as jenkins user)
-RUN chmod -R 777 /kaniko && \
-    chown -R jenkins:jenkins /kaniko
+RUN chown -R jenkins:jenkins /kaniko
+# Set Kaniko execution permissions
+RUN chmod +x /kaniko/executor
 
 # Define environment variables for Kaniko
 ENV DOCKER_CONFIG=/kaniko/.docker
@@ -57,8 +57,5 @@ RUN curl -Lo sonarqube.zip https://binaries.sonarsource.com/Distribution/sonar-s
     && ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner \
     && rm sonarqube.zip
 
-# Set Docker socket permissions
-RUN usermod -aG docker jenkins
-USER jenkins
 
 CMD ["/usr/local/bin/jenkins-agent"]
