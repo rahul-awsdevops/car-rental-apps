@@ -106,40 +106,38 @@ pipeline {
             // ✅ Generate a 7-character commit hash as IMAGE_TAG
             def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
             env.IMAGE_TAG = COMMIT_ID  
-                 sh """
-                 mkdir -p /root/.docker
+            // ✅ Build & Push Backend Image using Kaniko
+                sh """
+                mkdir -p /root/.docker
                 aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
                 cp /root/.docker/config.json /kaniko/.docker/config.json
+                echo "🔧 Building Backend Image..."
+                    /kaniko/executor \
+                   --context=${env.WORKSPACE}/car-rental-apps-backend \
+                    --dockerfile=${env.WORKSPACE}/car-rental-apps-backend/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                      --verbosity=debug \
+                        --log-format=text 
+
                 """
-            // ✅ Build & Push Frontend Image using Kaniko
-            dir('car-rental-app-frontend') {
                 sh """
                 pwd
                 ls -lah
                 whoami
                 id
                 ls -ld /kaniko
+                 echo "🔧 Building Frontend Image..."
                 /kaniko/executor \
-                    --context=`pwd`\
-                    --dockerfile `pwd`/Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
-                """
-            }
-
-            // ✅ Build & Push Backend Image using Kaniko
-            dir('car-rental-apps-backend') {
-                sh """
-                    /kaniko/executor \
-                    --verbosity=debug \
-                    --context . \
-                    --dockerfile Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                    --cache=true
+                --context=${env.WORKSPACE}/car-rental-app-frontend \
+                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                        --verbosity=debug \
+                        --log-format=text 
                 """
             }
         }
     }
-}
+
 
         stage('Trivy Image Scan') {
             steps {
