@@ -112,15 +112,12 @@ pipeline {
                 aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
                 cp /root/.docker/config.json /kaniko/.docker/config.json
                 echo "🔧 Building Backend Image..."
-                    /kaniko/executor \
+                /kaniko/executor \
                    --context=${env.WORKSPACE}/car-rental-apps-backend \
                     --dockerfile=${env.WORKSPACE}/car-rental-apps-backend/Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                      --verbosity=debug \
+                     --verbosity=debug \
                         --log-format=text 
-
-                """
-                sh """
                 pwd
                 ls -lah
                 whoami
@@ -130,9 +127,7 @@ pipeline {
                 /kaniko/executor \
                 --context=${env.WORKSPACE}/car-rental-app-frontend \
                 --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                        --verbosity=debug \
-                        --log-format=text 
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
                 """
             }
         }
