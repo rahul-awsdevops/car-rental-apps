@@ -109,7 +109,7 @@ pipeline {
                  sh """
                  mkdir -p /root/.docker
                 aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
-                cp ~/.docker/config.json /kaniko/.docker/config.json
+                cp /root/.docker/config.json /kaniko/.docker/config.json
                 """
             // ✅ Build & Push Frontend Image using Kaniko
             dir('car-rental-app-frontend') {
