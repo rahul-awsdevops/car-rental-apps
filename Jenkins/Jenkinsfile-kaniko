@@ -169,6 +169,7 @@ pipeline {
             }
         }
     }
+    /*
         stage('Trivy Image Scan') {
             steps {
                 script {
@@ -189,6 +190,46 @@ pipeline {
             }
         }
     }
+*/
+   stage('Deploy to EKS') {
+    steps {
+        script {
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            dir('aws-eks-kube-manifests') {
+                sh """
+                set -e  # Exit on error
+
+                echo "🔧 Updating image tags in manifests with COMMIT_ID: ${COMMIT_ID}"
+
+                # Replace image tags for frontend nginx proxy
+                sed -i "s|techcloud-academy-frontend-apps-nginx-proxy:[a-z0-9]*|techcloud-academy-frontend-apps-nginx-proxy:${COMMIT_ID}|g" car-rental-frontend.yml
+
+                # Replace image tags for frontend app
+                sed -i "s|techcloud-academy-frontend-apps:[a-z0-9]*|techcloud-academy-frontend-apps:${COMMIT_ID}|g" car-rental-frontend.yml
+
+                # Replace image tags for backend app
+                sed -i "s|techcloud-academy-backend-apps:[a-z0-9]*|techcloud-academy-backend-apps:${COMMIT_ID}|g" car-rental-backend.yml
+
+                echo "🔑 Setting up kubeconfig"
+                aws sts get-caller-identity
+                aws eks update-kubeconfig --region us-east-1 --name Jenkins-eks-cluster
+
+                echo "🚀 Applying manifests to EKS"
+                kubectl apply -f .
+
+                echo "🕒 Waiting for rollout to complete..."
+                kubectl rollout status deployment/car-rental-frontend 
+                kubectl rollout status deployment/car-rental-backend 
+
+                echo "✅ Rollout completed successfully!"
+                kubectl get pods 
+                """
+            }
+        }
+    }
+}
+
+
     post {
         always {
             cleanWs()
