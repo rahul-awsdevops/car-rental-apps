@@ -187,11 +187,11 @@ pipeline {
                     """
                 }
             }
+        }
             post {
                 always {
                     cleanWs()
                 }
             }
         }
-    }
-}
+    
