@@ -13,7 +13,6 @@ pipeline {
     }
 
     stages {
-/*
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -146,7 +145,7 @@ pipeline {
             }
         }
     }
-    */
+    
          stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
