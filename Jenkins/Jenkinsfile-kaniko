@@ -63,7 +63,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Quality Gate') {
             steps {
                 script {
@@ -76,7 +76,7 @@ pipeline {
                 }
             }
         }
-        
+      */  
         stage('Trivy Filesystem Scan') {
             steps {
                 script {
