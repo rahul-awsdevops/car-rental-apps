@@ -169,29 +169,7 @@ pipeline {
             }
         }
     }
-    /*
-        stage('Trivy Image Scan') {
-            steps {
-                script {
-             // Scan frontend nginx proxy image in ECR
-            sh """
-                trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
-            """
-                    // Scan frontend image in ECR
-                    sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
-                    """
-                    
-                    // Scan backend image in ECR
-                    sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                    """
-                }
-            }
-        }
-    }
-*/
-   stage('Deploy to EKS') {
+       stage('Deploy to EKS') {
     steps {
         script {
             def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
@@ -228,6 +206,27 @@ pipeline {
         }
     }
 }
+    
+        stage('Trivy Image Scan') {
+            steps {
+                script {
+             // Scan frontend nginx proxy image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
+            """
+                    // Scan frontend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                    """
+                    
+                    // Scan backend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+                    """
+                }
+            }
+        }
+    }
 
 
     post {
