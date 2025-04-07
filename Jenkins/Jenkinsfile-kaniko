@@ -169,29 +169,26 @@ pipeline {
             }
         }
     }
-
-        stage('Trivy Image Scan') {
-            steps {
-                script {
-                    // Scan frontend nginx proxy image in ECR
-                    sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
-                    """
-                    // Scan frontend image in ECR
-                    sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                    """
-                    // Scan backend image in ECR
-                    sh """
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
-                    """
-                }
-            }
+stage('Trivy Image Scan') {
+    steps {
+        script {
+            // Scan frontend nginx proxy image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
+            """
+            // Scan frontend image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+            """
+            // Scan backend image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+            """
         }
-            post {
-                always {
-                    cleanWs()
-                }
-            }
+    }
+    post {
+        always {
+            cleanWs()
         }
-    
+    }
+}
