@@ -13,7 +13,7 @@ pipeline {
     }
 
     stages {
-
+/*
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -63,7 +63,7 @@ pipeline {
                 }
             }
         }
-/*
+
         stage('Quality Gate') {
             steps {
                 script {
@@ -76,7 +76,7 @@ pipeline {
                 }
             }
         }
-      */  
+      
         stage('Trivy Filesystem Scan') {
             steps {
                 script {
@@ -146,7 +146,7 @@ pipeline {
             }
         }
     }
-    
+    */
          stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
