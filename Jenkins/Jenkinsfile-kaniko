@@ -187,7 +187,8 @@ pipeline {
 
                 # Replace image tags for backend app
                 sed -i "s|techcloud-academy-backend-apps:[a-z0-9]*|techcloud-academy-backend-apps:${COMMIT_ID}|g" car-rental-backend.yml
-
+                cat car-rental-backend.yml
+                cat car-rental-frontend.yml
                 echo "🔑 Setting up kubeconfig"
                 aws sts get-caller-identity
                 aws eks update-kubeconfig --region us-east-1 --name Jenkins-eks-cluster
