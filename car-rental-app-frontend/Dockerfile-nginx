@@ -1,5 +1,6 @@
 # Dockerfile for NGINX reverse proxy
-FROM nginx:stable-alpine
+FROM nginx:stable-alpine3.20
+RUN apk update && apk upgrade
 # Copy Nginx template
 COPY nginx/templates /etc/nginx/templates/
 ENV NGINX_PORT=80
