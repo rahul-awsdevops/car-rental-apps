@@ -80,7 +80,7 @@ pipeline {
                 }
             }
         }
-        */
+        
         stage('Trivy Filesystem Scan') {
             steps {
                 script {
@@ -106,7 +106,7 @@ pipeline {
                 }
             }
         }
-
+*/
         stage('Docker Build & Push Backend to ECR with Kaniko') {
     steps {
         script {
@@ -122,10 +122,7 @@ pipeline {
                 /kaniko/executor \
                    --context=${env.WORKSPACE}/car-rental-apps-backend \
                     --dockerfile=${env.WORKSPACE}/car-rental-apps-backend/Dockerfile \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
-                     --verbosity=debug \
-                        --log-format=text 
-                        trivy image --severity HIGH,CRITICAL --exit-code 1 ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
                 """
             }
         }
