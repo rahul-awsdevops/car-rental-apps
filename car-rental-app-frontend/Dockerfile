@@ -11,7 +11,7 @@ RUN npm run build
 
 # Production Image
 FROM node:20-alpine
-RUN apk --no-cache add dumb-init
+
 WORKDIR /app
 
 COPY --from=builder /app /app
