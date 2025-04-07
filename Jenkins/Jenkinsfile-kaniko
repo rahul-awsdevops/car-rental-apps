@@ -189,8 +189,8 @@ pipeline {
             }
         }
     }
-       stage('Deploy to EKS') {
-    steps {
+    stage('Deploy to EKS') {
+      steps {
         script {
             def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
             dir('aws-eks-kube-manifests') {
@@ -227,8 +227,7 @@ pipeline {
         }
     }
 }
-    
-
+} 
 
 
     post {
