@@ -198,6 +198,7 @@ stage('Update Deployment file to GitOps Repo') {
             withCredentials([string(credentialsId: 'gitops-argocd', variable: 'GITHUB_PAT')]) {
                 dir('car-rental-apps/aws-eks-kube-manifests') {
                     sh """
+                    ls -lrt
                     echo "🔧 Updating manifests with tag: ${COMMIT_ID}"
                     sed -i "s|${FRONTEND_ECR_NGING_REPOSITORY}:[a-z0-9]*|${FRONTEND_ECR_NGING_REPOSITORY}:${COMMIT_ID}|g" car-rental-frontend.yml
                     sed -i "s|${FRONTEND_ECR_REPOSITORY}:[a-z0-9]*|${FRONTEND_ECR_REPOSITORY}:${COMMIT_ID}|g" car-rental-frontend.yml
