@@ -12,6 +12,11 @@ pipeline {
         FRONTEND_ECR_NGING_REPOSITORY ="techcloud-academy-frontend-apps-nginx-proxy"
     }
 
+    parameters {
+  validatingString defaultValue: '', description: 'Enter feature branch name like feature/CLOUD-1234-update-image', failedValidationMessage: 'Branch name must start with "feature/"', name: 'FEATURE_BRANCH_NAME', regex: '^feature\\/CLOUD-.*'
+}
+
+
     stages {
         /*
         stage('Install Frontend Dependencies') {
@@ -215,10 +220,13 @@ stage('Update Deployment file to GitOps Repo') {
                     git config user.email "rahulranjan.ranjan83@gmail.com"
                     git remote set-url origin https://${GITHUB_PAT}@github.com/rahul-awsdevops/eks-gitops-repos-argocd.git
 
-                    git checkout -b update-image-tags-${COMMIT_ID} || git checkout update-image-tags-${COMMIT_ID}
+                    git checkout -b ${FEATURE_BRANCH_NAME}-${COMMIT_ID} || git checkout ${FEATURE_BRANCH_NAME}-${COMMIT_ID}
                     git add .
-                    git commit -m "🔄 Update image tags to ${COMMIT_ID}"
-                    git push origin update-image-tags-${COMMIT_ID}
+                    git commit -m "Update image tags to ${COMMIT_ID} for ${FEATURE_BRANCH_NAME}"
+                    git push origin ${FEATURE_BRANCH_NAME}-${COMMIT_ID}
+                    echo '📬 Creating PR to main...'
+                    #gh auth login --with-token <<< "${GITHUB_PAT}"
+                    #gh pr create --title "Update image tag: ${COMMIT_ID}" --body "Auto PR from Jenkins pipeline for ${FEATURE_BRANCH_NAME}-${COMMIT_ID}" --base main --head ${FEATURE_BRANCH_NAME}-${COMMIT_ID}
                     """
                 }
             }
