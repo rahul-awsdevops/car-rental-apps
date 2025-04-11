@@ -196,6 +196,11 @@ stage('Update Deployment file to GitOps Repo') {
             def GITOPS_REPO = "https://github.com/rahul-awsdevops/eks-gitops-repos-argocd.git"
 
             withCredentials([string(credentialsId: 'gitops-argocd', variable: 'GITHUB_PAT')]) {
+
+                 sh """
+                echo "Cloning GitOps repo..."
+                git clone https://${GITHUB_PAT}@github.com/rahul-awsdevops/eks-gitops-repos-argocd.git
+                """
                 dir('car-rental-apps/aws-eks-kube-manifests') {
                     sh """
                     ls -lrt
