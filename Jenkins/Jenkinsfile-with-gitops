@@ -1,0 +1,222 @@
+pipeline {
+    agent { label 'ecs-fargate-agent' } 
+
+
+    environment {
+        SONAR_HOST_URL = "http://44.223.29.212:9000/"
+        SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
+        AWS_ACCOUNT_ID = "676206914267"
+        AWS_REGION = "us-east-1"
+        FRONTEND_ECR_REPOSITORY = "techcloud-academy-frontend-apps"
+        BACKEND_ECR_REPOSITORY = "techcloud-academy-backend-apps"
+        FRONTEND_ECR_NGING_REPOSITORY ="techcloud-academy-frontend-apps-nginx-proxy"
+    }
+
+    stages {
+        stage('Install Frontend Dependencies') {
+            steps {
+                dir('car-rental-app-frontend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Frontend)') {
+            steps {
+                dir('car-rental-app-frontend') {
+                    script {
+                        def scannerHome = tool 'SonarQubeScanner'
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_TOKEN}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Install Backend Dependencies') {
+            steps {
+                dir('car-rental-apps-backend') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis (Backend)') {
+            steps {
+                dir('car-rental-apps-backend') {
+                    script {
+                        def scannerHome = tool 'SonarQubeScanner'
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_TOKEN}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Quality Gate failed: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+      
+        stage('Trivy Filesystem Scan') {
+            steps {
+                script {
+                    // Scan frontend (check node_modules)
+                    dir('car-rental-app-frontend') {
+                        sh """
+                        trivy --version
+                        trivy fs . \
+                          --severity HIGH,CRITICAL \
+                            --exit-code 1 \
+                            
+                        """
+                    }
+                    // Scan backend
+                    dir('car-rental-apps-backend') {
+                        sh """
+                            trivy fs . \
+                            --severity HIGH,CRITICAL \
+                            --exit-code 1 \
+                            
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build & Push Backend to ECR with Kaniko') {
+    steps {
+        script {
+            // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID  
+            // ✅ Build & Push Backend Image using Kaniko
+                sh """
+                mkdir -p /root/.docker
+                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+                cp /root/.docker/config.json /kaniko/.docker/config.json
+                echo "🔧 Building Backend Image..."
+                /kaniko/executor \
+                   --context=${env.WORKSPACE}/car-rental-apps-backend \
+                    --dockerfile=${env.WORKSPACE}/car-rental-apps-backend/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                """
+            }
+        }
+    }
+
+     stage('Docker Build & Push frontend to ECR with Kaniko') {
+    steps {
+        script {
+            // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID  
+            // ✅ Build & Push Frontend Image using Kaniko
+                sh """
+                mkdir -p /root/.docker
+                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+                cp /root/.docker/config.json /kaniko/.docker/config.json
+                 echo "🔧 Building Frontend Image..."
+                /kaniko/executor \
+                --context=${env.WORKSPACE}/car-rental-app-frontend \
+                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
+                    --verbosity=debug \
+                    --log-format=text 
+                """
+            }
+        }
+    }
+    
+         stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
+    steps {
+        script {
+            // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID  
+            // ✅ Build & Push Frontend Image using Kaniko
+                sh """
+                mkdir -p /root/.docker
+                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
+                cp /root/.docker/config.json /kaniko/.docker/config.json
+                 echo "🔧 Building Nginx proxy Image..."
+                /kaniko/executor \
+                --context=${env.WORKSPACE}/car-rental-app-frontend \
+                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile-nginx \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG} \
+                    --verbosity=debug \
+                    --log-format=text 
+                """
+            }
+        }
+    }
+            stage('Trivy Image Scan') {
+            steps {
+                script {
+             // Scan frontend nginx proxy image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
+            """
+                    // Scan frontend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                    """
+                    
+                    // Scan backend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+                    """
+                }
+            }
+        }
+    
+stage('Update Deployment file to GitOps Repo') {
+    steps {
+        script {
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            def GITOPS_REPO = "https://github.com/rahul-awsdevops/eks-gitops-repos-argocd.git"
+
+            withCredentials([string(credentialsId: 'gitops-argocd', variable: 'GITHUB_PAT')]) {
+                dir('car-rental-apps/aws-eks-kube-manifests') {
+                    sh """
+                    echo "🔧 Updating manifests with tag: ${COMMIT_ID}"
+                    sed -i "s|${FRONTEND_ECR_NGING_REPOSITORY}:[a-z0-9]*|${FRONTEND_ECR_NGING_REPOSITORY}:${COMMIT_ID}|g" car-rental-frontend.yml
+                    sed -i "s|${FRONTEND_ECR_REPOSITORY}:[a-z0-9]*|${FRONTEND_ECR_REPOSITORY}:${COMMIT_ID}|g" car-rental-frontend.yml
+                    sed -i "s|${BACKEND_ECR_REPOSITORY}:[a-z0-9]*|${BACKEND_ECR_REPOSITORY}:${COMMIT_ID}|g" car-rental-backend.yml
+
+
+                    echo "📂 Git commit & push to GitOps repo"
+                    git config user.name "rahul-awsdevops"
+                    git config user.email "rahulranjan.ranjan83@gmail.com"
+                    git remote set-url origin https://${GITHUB_PAT}@github.com/rahul-awsdevops/eks-gitops-repos-argocd.git
+
+                    git checkout -b update-image-tags-${COMMIT_ID} || git checkout update-image-tags-${COMMIT_ID}
+                    git add .
+                    git commit -m "🔄 Update image tags to ${COMMIT_ID}"
+                    git push origin update-image-tags-${COMMIT_ID}
+                    """
+                }
+            }
+        }
+    }
+}
+    }
+}
