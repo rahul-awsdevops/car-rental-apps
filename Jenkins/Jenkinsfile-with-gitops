@@ -13,6 +13,7 @@ pipeline {
     }
 
     stages {
+        /*
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -187,7 +188,7 @@ pipeline {
                 }
             }
         }
-    
+    */
 stage('Update Deployment file to GitOps Repo') {
     steps {
         script {
