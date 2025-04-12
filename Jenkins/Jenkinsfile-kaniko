@@ -1,14 +1,6 @@
 pipeline {
     agent { label 'ecs-fargate-agent' } 
 
-        options {
-        // Disable Jenkins' default process handling
-        durabilityHint 'PERFORMANCE_OPTIMIZED'
-        disableConcurrentBuilds()
-         timeout(time: 30, unit: 'MINUTES')
-    }
-
-
     environment {
         SONAR_HOST_URL = "http://44.223.29.212:9000/"
         SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
@@ -17,7 +9,6 @@ pipeline {
         FRONTEND_ECR_REPOSITORY = "techcloud-academy-frontend-apps"
         BACKEND_ECR_REPOSITORY = "techcloud-academy-backend-apps"
         FRONTEND_ECR_NGING_REPOSITORY ="techcloud-academy-frontend-apps-nginx-proxy"
-        PATH = "/usr/local/bin:/usr/bin:/bin:/kaniko:/trivy/bin:${env.PATH}"
     }
 
     stages {
@@ -162,73 +153,25 @@ pipeline {
         }
     }
     /*
-         stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
-    steps {
-        script {
-            // ✅ Generate a 7-character commit hash as IMAGE_TAG
-            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-            env.IMAGE_TAG = COMMIT_ID  
-            // ✅ Build & Push Frontend Image using Kaniko
-                sh """
-                mkdir -p /root/.docker
-                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
-                cp /root/.docker/config.json /kaniko/.docker/config.json
-                 echo "🔧 Building Nginx proxy Image..."
-                /kaniko/executor \
-                --context=${env.WORKSPACE}/car-rental-app-frontend \
-                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile-nginx \
-                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG} \
-                    --verbosity=debug \
-                    --log-format=text 
-                """
+            stage('Trivy Image Scan') {
+            steps {
+                script {
+             // Scan frontend nginx proxy image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
+            """
+                    // Scan frontend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                    """
+                    
+                    // Scan backend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+                    """
+                }
             }
         }
-    }
-    */
-           stage('Trivy Image Scan') {
-    steps {
-        script {
-            // Create a custom script file to bypass Jenkins process handling
-            writeFile file: 'run_trivy_scans.sh', text: """#!/bin/bash
-                set -e
-                echo "=== Starting Trivy Scans ==="
-                
-                # Scan nginx proxy image
-                echo "Scanning nginx proxy image..."
-                /usr/local/bin/trivy image \\
-                    --severity HIGH,CRITICAL \\
-                    --exit-code 0 \\
-                    --ignore-unfixed \\
-                    ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_ECR_NGING_REPOSITORY}:${IMAGE_TAG}
-                
-                # Scan frontend image
-                echo "Scanning frontend image..."
-                /usr/local/bin/trivy image \\
-                    --severity HIGH,CRITICAL \\
-                    --exit-code 0 \\
-                    --ignore-unfixed \\
-                    ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_ECR_REPOSITORY}:${IMAGE_TAG}
-                
-                # Scan backend image
-                echo "Scanning backend image..."
-                /usr/local/bin/trivy image \\
-                    --severity HIGH,CRITICAL \\
-                    --exit-code 0 \\
-                    --ignore-unfixed \\
-                    ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_ECR_REPOSITORY}:${IMAGE_TAG}
-                
-                echo "=== All Trivy scans completed ==="
-            """
-            
-            // Make the script executable and run it directly
-            sh """
-                chmod +x run_trivy_scans.sh
-                ./run_trivy_scans.sh
-            """
-        }
-    }
-}
-
     stage('Deploy to EKS') {
       steps {
         script {
@@ -267,6 +210,7 @@ pipeline {
         }
     }
 }
+*/
 }
 }
 
