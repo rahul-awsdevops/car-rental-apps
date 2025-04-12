@@ -9,10 +9,11 @@ pipeline {
         FRONTEND_ECR_REPOSITORY = "techcloud-academy-frontend-apps"
         BACKEND_ECR_REPOSITORY = "techcloud-academy-backend-apps"
         FRONTEND_ECR_NGING_REPOSITORY ="techcloud-academy-frontend-apps-nginx-proxy"
+        IMAGE_TAG = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
     }
 
     stages {
-        /*
+        
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -101,14 +102,10 @@ pipeline {
                 }
             }
         }
-*/
+
         stage('Docker Build & Push Backend and Frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
-            // ✅ Generate a 7-character commit hash as IMAGE_TAG
-            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-            env.IMAGE_TAG = COMMIT_ID  
-            // ✅ Build & Push Backend Image using Kaniko
                 sh """
                 mkdir -p /root/.docker
                 aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
@@ -133,10 +130,6 @@ pipeline {
      stage('Docker Build & Push frontend to ECR with Kaniko') {
     steps {
         script {
-            // ✅ Generate a 7-character commit hash as IMAGE_TAG
-            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
-            env.IMAGE_TAG = COMMIT_ID  
-            // ✅ Build & Push Frontend Image using Kaniko
                 sh """
                 mkdir -p /root/.docker
                 aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
@@ -153,7 +146,7 @@ pipeline {
             }
         }
     }
-    /*
+    
             stage('Trivy Image Scan') {
             steps {
                 script {
@@ -211,7 +204,7 @@ pipeline {
         }
     }
 }
-*/
+
 }
 }
 
