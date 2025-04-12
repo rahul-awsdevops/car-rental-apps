@@ -148,6 +148,7 @@ pipeline {
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} \
                     --verbosity=debug \
                     --log-format=text 
+                    echo "✅ Kaniko Frontend Build Stage Finished"
                 """
             }
         }
