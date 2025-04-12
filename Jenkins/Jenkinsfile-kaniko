@@ -13,6 +13,7 @@ pipeline {
     }
 
     stages {
+        /*
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {
@@ -101,7 +102,7 @@ pipeline {
                 }
             }
         }
-
+*/
         stage('Docker Build & Push Backend to ECR with Kaniko') {
     steps {
         script {
@@ -118,6 +119,13 @@ pipeline {
                    --context=${env.WORKSPACE}/car-rental-apps-backend \
                     --dockerfile=${env.WORKSPACE}/car-rental-apps-backend/Dockerfile \
                     --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                echo "🔧 Building Nginx proxy Image..."
+                /kaniko/executor \
+                --context=${env.WORKSPACE}/car-rental-app-frontend \
+                --dockerfile=${env.WORKSPACE}/car-rental-app-frontend/Dockerfile-nginx \
+                    --destination ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG} \
+                    --verbosity=debug \
+                    --log-format=text 
                 """
             }
         }
@@ -145,7 +153,7 @@ pipeline {
             }
         }
     }
-    
+    /*
          stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
@@ -168,6 +176,7 @@ pipeline {
             }
         }
     }
+    */
             stage('Trivy Image Scan') {
             steps {
                 script {
