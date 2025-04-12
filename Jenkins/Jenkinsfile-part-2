@@ -1,0 +1,82 @@
+pipeline {
+    agent { label 'ecs-fargate-agent' } 
+
+    environment {
+        SONAR_HOST_URL = "http://44.223.29.212:9000/"
+        SONAR_TOKEN = credentials('sonarqube-token') // Put your token in Jenkins credentials
+        AWS_ACCOUNT_ID = "676206914267"
+        AWS_REGION = "us-east-1"
+        FRONTEND_ECR_REPOSITORY = "techcloud-academy-frontend-apps"
+        BACKEND_ECR_REPOSITORY = "techcloud-academy-backend-apps"
+        FRONTEND_ECR_NGING_REPOSITORY ="techcloud-academy-frontend-apps-nginx-proxy"
+    }
+
+    stages {
+        
+            stage('Trivy Image Scan') {
+            steps {
+                script {
+         // ✅ Generate a 7-character commit hash as IMAGE_TAG
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            env.IMAGE_TAG = COMMIT_ID 
+             // Scan frontend nginx proxy image in ECR
+            sh """
+                trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_NGING_REPOSITORY}:${env.IMAGE_TAG}
+            """
+                    // Scan frontend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.FRONTEND_ECR_REPOSITORY}:${env.IMAGE_TAG} 
+                    """
+                    
+                    // Scan backend image in ECR
+                    sh """
+                        trivy image --severity HIGH,CRITICAL --exit-code 0 --ignore-unfixed ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.BACKEND_ECR_REPOSITORY}:${env.IMAGE_TAG}
+                    """
+                }
+            }
+        }
+    stage('Deploy to EKS') {
+      steps {
+        script {
+            def COMMIT_ID = sh(script: "git rev-parse --short=7 HEAD", returnStdout: true).trim()
+            dir('aws-eks-kube-manifests') {
+                sh """
+                set -e  # Exit on error
+
+                echo "🔧 Updating image tags in manifests with COMMIT_ID: ${COMMIT_ID}"
+
+                # Replace image tags for frontend nginx proxy
+                sed -i "s|techcloud-academy-frontend-apps-nginx-proxy:[a-z0-9]*|techcloud-academy-frontend-apps-nginx-proxy:${COMMIT_ID}|g" car-rental-frontend.yml
+
+                # Replace image tags for frontend app
+                sed -i "s|techcloud-academy-frontend-apps:[a-z0-9]*|techcloud-academy-frontend-apps:${COMMIT_ID}|g" car-rental-frontend.yml
+
+                # Replace image tags for backend app
+                sed -i "s|techcloud-academy-backend-apps:[a-z0-9]*|techcloud-academy-backend-apps:${COMMIT_ID}|g" car-rental-backend.yml
+                cat car-rental-backend.yml
+                cat car-rental-frontend.yml
+                echo "🔑 Setting up kubeconfig"
+                aws sts get-caller-identity
+                aws eks update-kubeconfig --region us-east-1 --name Jenkins-eks-cluster
+
+                echo "🚀 Applying manifests to EKS"
+                kubectl apply -f .
+
+                echo "🕒 Waiting for rollout to complete..."
+                kubectl rollout status deployment/car-rental-frontend 
+                kubectl rollout status deployment/car-rental-backend 
+
+                echo "✅ Rollout completed successfully!"
+                kubectl get pods 
+                """
+            }
+        }
+    }
+}
+
+}
+}
+
+
+
+
