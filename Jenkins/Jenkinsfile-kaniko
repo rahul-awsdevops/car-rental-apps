@@ -189,14 +189,15 @@ pipeline {
     steps {
         script {
             sh """
-                echo "=== System Diagnostics ==="
-                echo "PATH: $PATH"
-                echo "Current dir: $(pwd)"
-                echo "Trivy path: $(which trivy)"
-                echo "nohup path: $(which nohup)"
-                echo "Disk space:"
-                df -h
-                echo "Memory:"
+~           trivy --version
+ ~          echo "=== Environment Diagnostics ==="
+ ~          echo "PATH: $PATH"
+ ~          which trivy || echo "Trivy not found in PATH"
+ ~           which nohup || echo "nohup not found in PATH"
+ ~           echo "============================="
+             echo "Disk space:"
+             df -h
+             echo "Memory:"
                 free -h
                 echo "========================="
             """
