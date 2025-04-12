@@ -5,6 +5,7 @@ pipeline {
         // Disable Jenkins' default process handling
         durabilityHint 'PERFORMANCE_OPTIMIZED'
         disableConcurrentBuilds()
+         timeout(time: 30, unit: 'MINUTES')
     }
 
 
@@ -110,7 +111,7 @@ pipeline {
             }
         }
 */
-        stage('Docker Build & Push Backend to ECR with Kaniko') {
+        stage('Docker Build & Push Backend and Frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
             // ✅ Generate a 7-character commit hash as IMAGE_TAG
@@ -137,7 +138,7 @@ pipeline {
             }
         }
     }
-/*
+
      stage('Docker Build & Push frontend to ECR with Kaniko') {
     steps {
         script {
@@ -160,7 +161,7 @@ pipeline {
             }
         }
     }
-    
+    /*
          stage('Docker Build & Push frontend nginx proxy to ECR with Kaniko') {
     steps {
         script {
