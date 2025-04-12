@@ -185,25 +185,6 @@ pipeline {
         }
     }
     */
-    stage('Pre-Trivy Diagnostics') {
-    steps {
-        script {
-            sh """
-~           trivy --version
- ~          echo "=== Environment Diagnostics ==="
- ~          echo "PATH: $PATH"
- ~          which trivy || echo "Trivy not found in PATH"
- ~           which nohup || echo "nohup not found in PATH"
- ~           echo "============================="
-             echo "Disk space:"
-             df -h
-             echo "Memory:"
-                free -h
-                echo "========================="
-            """
-        }
-    }
-}
            stage('Trivy Image Scan') {
     steps {
         script {
@@ -215,31 +196,25 @@ pipeline {
                 # Scan nginx proxy image
                 echo "Scanning nginx proxy image..."
                 /usr/local/bin/trivy image \\
-                    --cache-dir /tmp/trivy-cache \\
                     --severity HIGH,CRITICAL \\
                     --exit-code 0 \\
                     --ignore-unfixed \\
-                    --skip-update \\
                     ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_ECR_NGING_REPOSITORY}:${IMAGE_TAG}
                 
                 # Scan frontend image
                 echo "Scanning frontend image..."
                 /usr/local/bin/trivy image \\
-                    --cache-dir /tmp/trivy-cache \\
                     --severity HIGH,CRITICAL \\
                     --exit-code 0 \\
                     --ignore-unfixed \\
-                    --skip-update \\
                     ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_ECR_REPOSITORY}:${IMAGE_TAG}
                 
                 # Scan backend image
                 echo "Scanning backend image..."
                 /usr/local/bin/trivy image \\
-                    --cache-dir /tmp/trivy-cache \\
                     --severity HIGH,CRITICAL \\
                     --exit-code 0 \\
                     --ignore-unfixed \\
-                    --skip-update \\
                     ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_ECR_REPOSITORY}:${IMAGE_TAG}
                 
                 echo "=== All Trivy scans completed ==="
