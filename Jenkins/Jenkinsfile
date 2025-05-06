@@ -11,7 +11,7 @@ pipeline {
     }
 
     stages {
-/*
+
         stage('Install Frontend Dependencies') {
             steps {
                 dir('car-rental-app-frontend') {

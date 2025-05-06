@@ -14,7 +14,7 @@ spec:
     spec: 
       containers:
         - name: car-rental-backend-container
-          image: 676206914267.dkr.ecr.us-east-1.amazonaws.com/techcloud-academy-backend-apps:9b69dc8
+          image: 676206914267.dkr.ecr.us-east-1.amazonaws.com/techcloud-academy-backend-apps:adec382
           ports:
             - containerPort: 4000 #default-port-pgadmin
 
